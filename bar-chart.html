@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Bar Chart - Widget Configuration</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f7f8fa;color:#000;}
+    .page{display:flex;height:100vh;overflow:hidden;}
+
+    /* ── Left: Config Panel ── */
+    .config-panel{width:400px;min-width:400px;background:#fff;border-right:1px solid #e0e0e0;display:flex;flex-direction:column;overflow:hidden;}
+    .cp-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e0e0e0;}
+    .cp-header-title{font-size:15px;font-weight:700;color:#000;}
+    .cp-close{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;font-size:20px;color:#555;border-radius:5px;line-height:1;}
+    .cp-close:hover{background:#f0f0f0;}
+    .cp-body{flex:1;overflow-y:auto;padding:20px;}
+    .cp-footer{padding:14px 20px;border-top:1px solid #e0e0e0;display:flex;justify-content:flex-end;gap:10px;}
+
+    /* Floating label fields */
+    .float-field{position:relative;margin-bottom:14px;}
+    .float-input,.float-select{width:100%;padding:18px 14px 8px;border:1px solid #ccc;border-radius:8px;font-size:14px;color:#000;font-family:inherit;background:#fff;outline:none;transition:border-color 0.2s;appearance:none;}
+    .float-textarea{width:100%;padding:22px 14px 8px;border:1px solid #ccc;border-radius:8px;font-size:14px;color:#000;font-family:inherit;background:#fff;outline:none;transition:border-color 0.2s;resize:vertical;min-height:90px;}
+    .float-input:focus,.float-select:focus,.float-textarea:focus{border-color:#3dab7e;}
+    .float-input.err,.float-select.err{border-color:#e53e3e;}
+    .float-input[readonly]{background:#f5f5f5;color:#777;cursor:not-allowed;}
+    .float-label{position:absolute;left:14px;top:14px;font-size:14px;color:#aaa;pointer-events:none;transition:all 0.15s;background:transparent;}
+    .float-label.active{top:6px;font-size:11px;color:#3dab7e;}
+    .float-input.err~.float-label,.float-select.err~.float-label{color:#e53e3e;}
+    .float-label .req{color:#e53e3e;}
+    .err-msg{font-size:11px;color:#e53e3e;margin-top:4px;display:none;}
+    .err-msg.show{display:block;}
+    .sel-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;}
+
+    /* Number spinners */
+    .spin-wrap{position:relative;}
+    .spin-arrows{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:2px;}
+    .spin-btn{border:none;background:none;cursor:pointer;color:#aaa;padding:0;line-height:1;font-size:10px;}
+    .spin-btn:hover{color:#3dab7e;}
+
+    /* Section heading */
+    .section-title{font-size:14px;font-weight:700;color:#000;margin:18px 0 12px 0;}
+
+    /* Checkbox */
+    .check-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+    .check-row input[type=checkbox]{width:15px;height:15px;accent-color:#3dab7e;cursor:pointer;flex-shrink:0;}
+    .check-row label{font-size:14px;color:#000;cursor:pointer;}
+
+    /* Buttons */
+    .btn-cancel{padding:9px 22px;background:#fff;border:1.5px solid #ccc;border-radius:7px;font-size:13.5px;font-weight:500;color:#000;cursor:pointer;font-family:inherit;transition:border-color 0.15s;}
+    .btn-cancel:hover{border-color:#999;}
+    .btn-add{padding:9px 26px;background:#3dab7e;border:none;border-radius:7px;font-size:13.5px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;transition:background 0.15s;}
+    .btn-add:hover{background:#2e8f67;}
+
+    /* ── Right: Preview Area ── */
+    .preview-area{flex:1;background:#f7f8fa;overflow-y:auto;padding:24px;}
+    .preview-section-label{font-size:11px;font-weight:600;color:#aaa;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:10px;}
+
+    /* Widget card preview - matches configure.html canvas card style */
+    .preview-card{background:#fff;border:1.5px solid #ddd;border-radius:8px;padding:14px;margin-bottom:16px;position:relative;}
+    .preview-card-title{font-size:13px;color:#555;font-weight:500;margin-bottom:12px;}
+    .preview-chart-wrap{position:relative;height:240px;}
+
+    /* Toast */
+    .toast{position:fixed;top:20px;right:24px;background:#3dab7e;color:#fff;display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:8px;font-size:13.5px;font-weight:500;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:opacity 0.3s;max-width:380px;}
+    .toast.show{opacity:1;pointer-events:auto;}
+    .toast-icon{width:22px;height:22px;background:rgba(255,255,255,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .toast-x{cursor:pointer;margin-left:6px;font-size:17px;opacity:0.8;line-height:1;}
+    .toast-x:hover{opacity:1;}
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-icon"><svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <span id="toastMsg"></span>
+  <span class="toast-x" onclick="hideToast()">×</span>
+</div>
+
+<div class="page">
+
+  <!-- ══════════════════════════════
+       LEFT — WIDGET CONFIGURATION
+  ══════════════════════════════ -->
+  <div class="config-panel">
+    <div class="cp-header">
+      <span class="cp-header-title">Widget configuration</span>
+      <button class="cp-close" onclick="goBack()">×</button>
+    </div>
+
+    <div class="cp-body">
+
+      <!-- Widget title -->
+      <div class="float-field">
+        <input class="float-input" id="f-title" type="text" oninput="syncLabel(this);livePreview()"/>
+        <label class="float-label" for="f-title">Widget title <span class="req">*</span></label>
+        <span class="err-msg" id="e-title">Please fill the field</span>
+      </div>
+
+      <!-- Widget type (readonly) -->
+      <div class="float-field">
+        <input class="float-input" id="f-type" type="text" value="Bar Chart" readonly/>
+        <label class="float-label active" for="f-type">Widget type <span class="req">*</span></label>
+      </div>
+
+      <!-- Description -->
+      <div class="float-field">
+        <textarea class="float-textarea" id="f-desc" oninput="syncLabelById('f-desc','l-desc')"></textarea>
+        <label class="float-label" id="l-desc">Description</label>
+      </div>
+
+      <!-- Widget size -->
+      <div class="section-title">Widget size</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+
+        <!-- Width -->
+        <div class="float-field spin-wrap">
+          <input class="float-input" id="f-width" type="number" value="4" min="1" oninput="syncLabel(this)"/>
+          <label class="float-label active" for="f-width">Width (Columns) <span class="req">*</span></label>
+          <div class="spin-arrows">
+            <button class="spin-btn" onclick="spin('f-width',1)">▲</button>
+            <button class="spin-btn" onclick="spin('f-width',-1)">▼</button>
+          </div>
+        </div>
+
+        <!-- Height -->
+        <div class="float-field spin-wrap">
+          <input class="float-input" id="f-height" type="number" value="4" min="1" oninput="syncLabel(this)"/>
+          <label class="float-label active" for="f-height">Height (Rows) <span class="req">*</span></label>
+          <div class="spin-arrows">
+            <button class="spin-btn" onclick="spin('f-height',1)">▲</button>
+            <button class="spin-btn" onclick="spin('f-height',-1)">▼</button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Data setting -->
+      <div class="section-title">Data setting</div>
+
+      <!-- X Axis -->
+      <div class="float-field" style="position:relative;">
+        <select class="float-select" id="f-xaxis" onchange="syncLabel(this);livePreview()">
+          <option value=""></option>
+          <option value="Product">Product</option>
+          <option value="Quantity">Quantity</option>
+          <option value="Unit price">Unit price</option>
+          <option value="Total amount">Total amount</option>
+          <option value="Status">Status</option>
+          <option value="Created by">Created by</option>
+          <option value="Duration">Duration</option>
+        </select>
+        <label class="float-label" for="f-xaxis">Choose X - axis data <span class="req">*</span></label>
+        <svg class="sel-arrow" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="err-msg" id="e-xaxis">Please fill the field</span>
+      </div>
+
+      <!-- Y Axis -->
+      <div class="float-field" style="position:relative;">
+        <select class="float-select" id="f-yaxis" onchange="syncLabel(this);livePreview()">
+          <option value=""></option>
+          <option value="Product">Product</option>
+          <option value="Quantity">Quantity</option>
+          <option value="Unit price">Unit price</option>
+          <option value="Total amount">Total amount</option>
+          <option value="Status">Status</option>
+          <option value="Created by">Created by</option>
+          <option value="Duration">Duration</option>
+        </select>
+        <label class="float-label" for="f-yaxis">Choose Y - axis data <span class="req">*</span></label>
+        <svg class="sel-arrow" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round"/></svg>
+        <span class="err-msg" id="e-yaxis">Please fill the field</span>
+      </div>
+
+      <!-- Show data label -->
+      <div class="check-row">
+        <input type="checkbox" id="f-datalabel" onchange="livePreview()"/>
+        <label for="f-datalabel">Show data label</label>
+      </div>
+
+    </div>
+
+    <!-- Footer buttons -->
+    <div class="cp-footer">
+      <button class="btn-cancel" onclick="goBack()">Cancel</button>
+      <button class="btn-add" id="addBtn" onclick="saveWidget()">Add</button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════
+       RIGHT — LIVE PREVIEW
+  ══════════════════════════════ -->
+  <div class="preview-area">
+    <div class="preview-section-label">Preview</div>
+
+    <!-- Widget card — same style as on canvas -->
+    <div class="preview-card">
+      <div class="preview-card-title" id="previewTitle">Untitled</div>
+      <div class="preview-chart-wrap">
+        <canvas id="previewCanvas"></canvas>
+      </div>
+    </div>
+
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;font-size:13px;color:#555;line-height:1.7;">
+      <strong style="color:#000;display:block;margin-bottom:4px;">Bar Chart widget</strong>
+      Fill in the title, choose X and Y axis data, then click <strong>Add</strong>.
+      The chart shows a live preview as you configure it.
+      After saving, the widget appears on your dashboard canvas.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var chart = null;
+  var activeWidgetId = null;
+
+  /* ── On page load: read active widget from localStorage ── */
+  window.addEventListener('load', function() {
+    activeWidgetId = localStorage.getItem('activeWidgetId');
+    var raw = localStorage.getItem('activeWidgetData');
+    if (raw) {
+      try {
+        var w = JSON.parse(raw);
+        if (w.configured) {
+          setValue('f-title', w.title || '');
+          setValue('f-desc',  w.desc  || '');
+          setValue('f-width', w.width  || 4);
+          setValue('f-height',w.height || 4);
+          setValue('f-xaxis', w.xAxis  || '');
+          setValue('f-yaxis', w.yAxis  || '');
+          document.getElementById('f-datalabel').checked = w.showLabels || false;
+          document.getElementById('addBtn').textContent = 'Save';
+        }
+      } catch(e){}
+    }
+    livePreview();
+  });
+
+  /* ── Set value and activate label ── */
+  function setValue(id, val) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.value = val;
+    syncLabel(el);
+  }
+
+  /* ── Sync floating label ── */
+  function syncLabel(el) {
+    var lbl = el.parentElement.querySelector('.float-label');
+    if (lbl) lbl.classList.toggle('active', String(el.value).trim() !== '');
+  }
+  function syncLabelById(inputId, labelId) {
+    var el = document.getElementById(inputId);
+    var lbl = document.getElementById(labelId);
+    if (lbl) lbl.classList.toggle('active', el && el.value.trim() !== '');
+  }
+
+  /* ── Number spinner ── */
+  function spin(id, delta) {
+    var el = document.getElementById(id);
+    el.value = Math.max(1, (parseInt(el.value) || 1) + delta);
+  }
+
+  /* ── Live preview ── */
+  function livePreview() {
+    /* Update title */
+    var title = document.getElementById('f-title').value.trim();
+    document.getElementById('previewTitle').textContent = title || 'Untitled';
+
+    var xVal = document.getElementById('f-xaxis').value;
+    var yVal = document.getElementById('f-yaxis').value;
+    var showLabels = document.getElementById('f-datalabel').checked;
+
+    var ctx = document.getElementById('previewCanvas').getContext('2d');
+    if (chart) chart.destroy();
+
+    chart = new Chart(ctx, {
+      type: 'bar',
+      data: {
+        labels: ['X-1', 'X-2', 'X-3', 'X-4', 'X-5', 'X-6'],
+        datasets: [{
+          label: yVal || 'Y Axis label',
+          data: [3200, 2500, 4100, 3700, 5300, 4500],
+          backgroundColor: '#4A90E2',
+          borderRadius: 4,
+          barPercentage: 0.55
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: { enabled: true },
+          datalabels: { display: showLabels }
+        },
+        scales: {
+          x: {
+            grid: { display: false },
+            ticks: { color: '#666', font: { size: 11 } },
+            title: {
+              display: true,
+              text: xVal ? xVal + ' label' : 'X-Axis label',
+              color: '#888', font: { size: 11 }
+            }
+          },
+          y: {
+            grid: { color: '#f0f0f0' },
+            ticks: { color: '#666', font: { size: 11 } },
+            title: {
+              display: true,
+              text: yVal ? yVal + ' label' : 'Y-Axis label',
+              color: '#888', font: { size: 11 }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  /* ── Validation ── */
+  var reqFields = ['title', 'xaxis', 'yaxis'];
+
+  function saveWidget() {
+    var valid = true;
+    reqFields.forEach(function(f) {
+      var el = document.getElementById('f-' + f);
+      var em = document.getElementById('e-' + f);
+      if (!el || !el.value.trim()) {
+        if (el) el.classList.add('err');
+        if (em) em.classList.add('show');
+        valid = false;
+      } else {
+        if (el) el.classList.remove('err');
+        if (em) em.classList.remove('show');
+      }
+    });
+    if (!valid) return;
+
+    /* ── Save config → configure.html reads this on load ── */
+    var config = {
+      type:       'Bar Chart',
+      wtype:      'bar-chart',
+      title:      document.getElementById('f-title').value.trim(),
+      desc:       document.getElementById('f-desc').value,
+      width:      parseInt(document.getElementById('f-width').value)  || 4,
+      height:     parseInt(document.getElementById('f-height').value) || 4,
+      xAxis:      document.getElementById('f-xaxis').value,
+      yAxis:      document.getElementById('f-yaxis').value,
+      showLabels: document.getElementById('f-datalabel').checked,
+      configured: true
+    };
+
+    localStorage.setItem('widgetConfigReturn', JSON.stringify({
+      widgetId: activeWidgetId,
+      config:   config
+    }));
+
+    showToast('All set! Your new widget have been added successfully!');
+    setTimeout(goBack, 1500);
+  }
+
+  /* ── Navigation ── */
+  function goBack() { window.location.href = 'configure.html'; }
+
+  /* ── Toast ── */
+  var toastTimer = null;
+  function showToast(msg) {
+    document.getElementById('toastMsg').textContent = msg;
+    document.getElementById('toast').classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 3500);
+  }
+  function hideToast() { document.getElementById('toast').classList.remove('show'); }
+</script>
+</body>
+</html>

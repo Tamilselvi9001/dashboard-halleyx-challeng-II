@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analytics Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="api.js"></script>
+    <style>
+        :root {
+            --primary-green: #3dab7e;
+            --border: #e0e0e0;
+        }
+
+        body {
+            font-family: sans-serif;
+            margin: 0;
+            background: #fafafa;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 15px 30px;
+            background: #fff;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .back-btn {
+            text-decoration: none;
+            color: #333;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            padding: 20px 30px;
+        }
+
+        .stat-card {
+            background: #fff;
+            border: 1px solid var(--border);
+            padding: 20px;
+            border-radius: 12px;
+        }
+
+        .stat-card h4 {
+            margin: 0;
+            font-size: 12px;
+            color: #888;
+            text-transform: uppercase;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 20px;
+            padding: 0 30px 20px;
+        }
+
+        .chart-box {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            height: 320px;
+            position: relative;
+        }
+
+        .chart-title {
+            font-size: 14px;
+            font-weight: 700;
+            margin-bottom: 15px;
+            color: #555;
+        }
+
+        .content-section {
+            padding: 0 30px 30px;
+        }
+
+        .table-container {
+            background: #fff;
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            min-height: 200px;
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            text-align: left;
+            background: #f9f9f9;
+            padding: 15px;
+            font-size: 13px;
+            color: #666;
+            border-bottom: 1px solid var(--border);
+        }
+
+        td {
+            padding: 15px;
+            font-size: 14px;
+            border-bottom: 1px solid #eee;
+            text-align: left;
+        }
+
+        .no-data {
+            padding: 50px;
+            color: #aaa;
+            font-size: 16px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:15px;">
+            <a href="configure.html" class="back-btn">←</a>
+            <h3 style="margin:0;">Analytics Overview</h3>
+        </div>
+        <select id="dateFilter" onchange="initDashboard()"
+            style="padding:8px; border-radius:5px; border:1px solid #ccc;">
+            <option value="Today">Today</option>
+            <option value="7">Last 7 Days</option>
+            <option value="All" selected>All time</option>
+        </select>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card">
+            <h4>Orders</h4>
+            <div class="stat-value" id="val-orders">0</div>
+        </div>
+        <div class="stat-card">
+            <h4>Revenue</h4>
+            <div class="stat-value" id="val-revenue">$ 0.00</div>
+        </div>
+        <div class="stat-card">
+            <h4>Customers</h4>
+            <div class="stat-value" id="val-cust">0</div>
+        </div>
+        <div class="stat-card">
+            <h4>Quantity</h4>
+            <div class="stat-value" id="val-qty">0</div>
+        </div>
+    </div>
+
+    <div class="charts-container">
+        <div class="chart-box">
+            <div class="chart-title">Revenue by Product (Bar Chart)</div>
+            <canvas id="barChart"></canvas>
+        </div>
+        <div class="chart-box">
+            <div class="chart-title">Order Status (Pie Chart)</div>
+            <canvas id="pieChart"></canvas>
+        </div>
+    </div>
+
+    <div class="content-section">
+        <div class="table-container" id="table-area">
+            <div class="no-data">No Data Found</div>
+        </div>
+    </div>
+
+    <script>
+        let barChartInstance = null;
+        let pieChartInstance = null;
+
+        async function initDashboard() {
+            let orders = [];
+
+            // LocalStorage-la irunthu priority-ah data-va edukuroom
+            const localData = localStorage.getItem('orders');
+            if (localData) {
+                orders = JSON.parse(localData);
+            }
+
+            // API check (Optional fallback)
+            if (orders.length === 0) {
+                try {
+                    orders = await API.orders.getAll() || [];
+                } catch (error) {
+                    console.warn("No data in LocalStorage or API");
+                }
+            }
+
+            // --- DATA NORMALIZATION ---
+            // Table-la neenga save panna 'fname', 'total' labels-ah analytics labels-kku match pandrom
+            const cleanData = orders.map(o => ({
+                order_id: o.order_id || o.id || 'N/A',
+                customer_name: o.customer_name || (o.fname ? `${o.fname} ${o.lname}` : 'Unknown'),
+                product_name: o.product_name || o.product || 'Product',
+                total_amount: parseFloat(o.total_amount || o.total || 0),
+                status: o.status || 'Pending'
+            }));
+
+            updateStats(cleanData);
+
+            if (cleanData.length === 0) {
+                document.getElementById('table-area').innerHTML = '<div class="no-data">No Orders Found in Database</div>';
+            } else {
+                renderTable(cleanData);
+            }
+
+            renderCharts(cleanData);
+        }
+
+        function updateStats(orders) {
+            document.getElementById('val-orders').innerText = orders.length;
+            let totalRev = orders.reduce((sum, o) => sum + o.total_amount, 0);
+            document.getElementById('val-revenue').innerText = "$ " + totalRev.toFixed(2);
+            document.getElementById('val-cust').innerText = [...new Set(orders.map(o => o.customer_name))].length;
+            document.getElementById('val-qty').innerText = orders.length;
+        }
+
+        function renderTable(data) {
+            let rows = data.map(o => `
+                <tr>
+                    <td>${o.order_id}</td>
+                    <td>${o.customer_name}</td>
+                    <td>${o.product_name}</td>
+                    <td>$ ${o.total_amount.toFixed(2)}</td>
+                    <td><span style="color:${o.status === 'Completed' ? '#3dab7e' : 'orange'}">${o.status}</span></td>
+                </tr>
+            `).join('');
+
+            document.getElementById('table-area').innerHTML = `
+                <table>
+                    <thead>
+                        <tr><th>Order ID</th><th>Customer</th><th>Product</th><th>Amount</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>`;
+        }
+
+        function renderCharts(data) {
+            const barCtx = document.getElementById('barChart');
+            const pieCtx = document.getElementById('pieChart');
+            if (!barCtx || !pieCtx) return;
+
+            if (barChartInstance) barChartInstance.destroy();
+            if (pieChartInstance) pieChartInstance.destroy();
+
+            // Bar Chart Logic
+            const productRevenue = {};
+            data.forEach(o => {
+                productRevenue[o.product_name] = (productRevenue[o.product_name] || 0) + o.total_amount;
+            });
+
+            const barLabels = Object.keys(productRevenue).length ? Object.keys(productRevenue) : ['No Data'];
+            const barValues = Object.values(productRevenue).length ? Object.values(productRevenue) : [0];
+
+            barChartInstance = new Chart(barCtx.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: barLabels,
+                    datasets: [{
+                        label: 'Revenue ($)',
+                        data: barValues,
+                        backgroundColor: '#3dab7e',
+                        borderRadius: 5
+                    }]
+                },
+                options: { maintainAspectRatio: false, responsive: true }
+            });
+
+            // Pie Chart Logic
+            const statusCounts = { 'In Progress': 0, 'Pending': 0, 'Completed': 0 };
+            data.forEach(o => {
+                if (statusCounts.hasOwnProperty(o.status)) {
+                    statusCounts[o.status]++;
+                } else {
+                    statusCounts['Pending']++;
+                }
+            });
+
+            pieChartInstance = new Chart(pieCtx.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(statusCounts),
+                    datasets: [{
+                        data: Object.values(statusCounts),
+                        backgroundColor: ['#4285f4', '#ffbb33', '#3dab7e']
+                    }]
+                },
+                options: { maintainAspectRatio: false, responsive: true }
+            });
+        }
+
+        window.onload = initDashboard;
+    </script>
+</body>
+
+</html>

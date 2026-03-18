@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Configure Dashboard</title>
+  <style>
+    :root {
+      --primary-green: #3dab7e;
+      --border: #e0e0e0;
+      --bg-light: #f4f4f4;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    body {
+      background: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 24px;
+      background: #3dab7e;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 18px;
+      border-radius: 8px;
+      font-size: 14px;
+      z-index: 9999;
+      transform: translateY(-100px);
+      transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+    .toast.show {
+      transform: translateY(0);
+    }
+
+    .toast-check {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 50%;
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 15px 24px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+
+    .back-btn {
+      font-size: 22px;
+      cursor: pointer;
+      color: #444;
+      background: none;
+      border: none;
+    }
+
+    .btn-group {
+      display: flex;
+      gap: 10px;
+    }
+
+    .view-orders-btn {
+      padding: 8px 16px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      background: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #444;
+      transition: all 0.2s;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+    }
+
+    .view-orders-btn:hover {
+      background: #f4f4f4;
+      border-color: #bbb;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    }
+
+    .btn-analytics {
+      background: var(--primary-green);
+      color: #fff;
+      border: none;
+    }
+
+    .btn-analytics:hover {
+      background: #34946d;
+      color: #fff;
+    }
+
+    .header-text h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #111;
+    }
+
+    .header-text p {
+      font-size: 12px;
+      color: #777;
+      margin-top: 2px;
+    }
+
+    .main-body {
+      display: flex;
+      flex: 1;
+      overflow: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 280px;
+      border-right: 1px solid var(--border);
+      padding: 20px;
+      overflow-y: auto;
+      background: #fff;
+    }
+
+    .sb-section-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #000;
+      margin-bottom: 10px;
+      display: block;
+    }
+
+    .dropdown {
+      width: 100%;
+      padding: 10px;
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      margin-bottom: 25px;
+      outline: none;
+      background: #fff url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="grey"><path d="M0 3l6 6 6-6z"/></svg>') no-repeat right 12px center;
+      appearance: none;
+    }
+
+    .acc-box {
+      border: 1px solid #eee;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+
+    .acc-head {
+      width: 100%;
+      padding: 12px;
+      background: #fcfcfc;
+      border: none;
+      display: flex;
+      justify-content: space-between;
+      font-weight: 600;
+      font-size: 14px;
+      cursor: pointer;
+    }
+
+    .acc-content {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .drag-item {
+      padding: 10px 15px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      border-top: 1px solid #f9f9f9;
+      cursor: grab;
+      transition: 0.2s;
+    }
+
+    .drag-item:hover {
+      background: #f5fcf9;
+    }
+
+    .drag-icon {
+      color: #ccc;
+      font-size: 16px;
+      width: 20px;
+      text-align: center;
+    }
+
+    /* Canvas Grid */
+    .canvas-area {
+      flex: 1;
+      background: var(--bg-light);
+      padding: 15px;
+      overflow: auto;
+      position: relative;
+    }
+
+    .grid-bg {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      grid-auto-rows: 50px;
+      gap: 10px;
+      min-height: 100%;
+    }
+
+    .grid-tile {
+      background: #fff;
+      border-radius: 4px;
+      height: 50px;
+      opacity: 0.3;
+    }
+
+    .grid-tile.active-drop {
+      background: #d1f2e5;
+      border: 2px dashed var(--primary-green);
+      opacity: 1;
+    }
+
+    /* Widget Card */
+    .widget-card {
+      position: absolute;
+      background: #fff;
+      border-radius: 12px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      z-index: 10;
+      width: 160px !important;
+      height: 120px !important;
+      cursor: move;
+    }
+
+    .wc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .wc-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #555;
+      cursor: pointer;
+      max-width: 90px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      transition: color 0.2s, text-decoration 0.2s;
+    }
+
+    .wc-title:hover {
+      color: var(--primary-green);
+      text-decoration: underline;
+    }
+
+    .wc-title:active {
+      transform: scale(0.95);
+      color: #000;
+    }
+
+    .wc-tools {
+      display: flex;
+      gap: 8px;
+    }
+
+    .wc-tool-btn {
+      border: none;
+      background: none;
+      cursor: pointer;
+      padding: 2px;
+      display: flex;
+      align-items: center;
+    }
+
+    .icon-trash {
+      stroke: #ff4d4d;
+    }
+
+    .icon-gear {
+      stroke: var(--primary-green);
+    }
+
+    .wc-value {
+      font-size: 24px;
+      font-weight: 800;
+      color: #000;
+      margin: 8px 0;
+    }
+
+    .wc-footer {
+      font-size: 9px;
+      font-weight: 700;
+      color: #bbb;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Footer */
+    .footer {
+      padding: 15px 24px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background: #fff;
+    }
+
+    .btn-cancel {
+      padding: 10px 22px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      background: #fff;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .btn-save {
+      padding: 10px 30px;
+      background: var(--primary-green);
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    /* Modal Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .modal-box {
+      background: #fff;
+      width: 420px;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .modal-header {
+      padding: 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #eee;
+    }
+
+    .modal-header h3 {
+      font-size: 18px;
+      margin: 0;
+      font-weight: 600;
+    }
+
+    .modal-body {
+      padding: 20px;
+      color: #666;
+      font-size: 15px;
+    }
+
+    .modal-footer {
+      padding: 15px 20px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      background: #fdfdfd;
+    }
+
+    .btn-discard {
+      padding: 8px 20px;
+      border: 1.5px solid var(--primary-green);
+      color: var(--primary-green);
+      background: #fff;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .btn-modal-save {
+      padding: 8px 25px;
+      background: var(--primary-green);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .close-x {
+      cursor: pointer;
+      font-size: 24px;
+      color: #aaa;
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="toast" id="toast">
+    <div style="display:flex; align-items:center; gap:10px">
+      <div class="toast-check">✓</div>
+      <span id="toastMsg">Changes saved!</span>
+    </div>
+    <span style="cursor:pointer; font-size:18px;" onclick="hideToast()">×</span>
+  </div>
+
+  <div class="header">
+    <div class="header-left">
+      <button class="back-btn" onclick="window.location.href='customer-orders.html'">←</button>
+      <div class="header-text">
+        <h2>Configure dashboard</h2>
+        <p>Configure your dashboard to start viewing analytics</p>
+      </div>
+    </div>
+
+    <div class="btn-group">
+      <button class="view-orders-btn btn-analytics" onclick="window.location.href='analytics.html'">View
+        analytics</button>
+      <button class="view-orders-btn" onclick="window.location.href='view-orders.html'">View orders</button>
+    </div>
+  </div>
+
+  <div class="main-body">
+    <div class="sidebar">
+      <label class="sb-section-label">Show data for</label>
+      <select class="dropdown">
+        <option>All time</option>
+        <option>Today</option>
+        <option>Last 7 Days</option>
+        <option>Last 30 Days</option>
+        <option>Last 90 Days</option>
+      </select>
+
+      <label class="sb-section-label">Widget library</label>
+      <p style="font-size: 11px; color: #999; margin-bottom: 15px;">Drag and drop to your canvas</p>
+
+      <div class="acc-box">
+        <button class="acc-head" onclick="toggleAcc('charts')">Charts <span id="arr-charts">⌄</span></button>
+        <div class="acc-content" id="acc-charts">
+          <div class="drag-item" draggable="true" ondragstart="handleDragStart(event, 'Bar Chart', 'chart')"><span
+              class="drag-icon">⠿</span> Bar Chart</div>
+          <div class="drag-item" draggable="true" ondragstart="handleDragStart(event, 'Line Chart', 'chart')"><span
+              class="drag-icon">⠿</span> Line Chart</div>
+          <div class="drag-item" draggable="true" ondragstart="handleDragStart(event, 'Pie Chart', 'chart')"><span
+              class="drag-icon">⠿</span> Pie Chart</div>
+          <div class="drag-item" draggable="true" ondragstart="handleDragStart(event, 'Area Chart', 'chart')"><span
+              class="drag-icon">⠿</span> Area Chart</div>
+          <div class="drag-item" draggable="true" ondragstart="handleDragStart(event, 'Scatter Plot', 'chart')"><span
+              class="drag-icon">⠿</span> Scatter Plot</div>
+        </div>
+      </div>
+
+      <div class="acc-box">
+        <button class="acc-head" onclick="toggleAcc('tables')">Tables <span id="arr-tables">⌄</span></button>
+        <div class="acc-content" id="acc-tables">
+          <div class="drag-item" draggable="true" ondragstart="handleDragStart(event, 'Table', 'table')"><span
+              class="drag-icon">⠿</span> Table</div>
+        </div>
+      </div>
+
+      <div class="acc-box">
+        <button class="acc-head" onclick="toggleAcc('kpis')">KPIs <span id="arr-kpis">⌄</span></button>
+        <div class="acc-content" id="acc-kpis">
+          <div class="drag-item" draggable="true" ondragstart="handleDragStart(event, 'KPI Value', 'kpi')"><span
+              class="drag-icon">⠿</span> KPI Value</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="canvas-area" id="canvas">
+      <div class="grid-bg" id="gridContainer"></div>
+    </div>
+  </div>
+
+  <div class="footer">
+    <button class="btn-cancel" onclick="window.location.href='customer-orders.html'">Cancel</button>
+    <button class="btn-save" onclick="saveDashboard()">Save</button>
+  </div>
+
+  <div id="deleteModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3>Unsaved changes</h3>
+        <span class="close-x" onclick="closeDeleteModal()">×</span>
+      </div>
+      <div class="modal-body">
+        <p>Do you want to save your changes before navigating away</p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-discard" onclick="confirmDelete()">Discard</button>
+        <button class="btn-modal-save" onclick="closeDeleteModal()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let widgets = JSON.parse(localStorage.getItem('my_dashboard_widgets')) || [];
+    let currentDrag = { type: '', cat: '', id: null };
+    let widgetToDelete = null;
+
+    const fileMap = {
+      'Bar Chart': 'bar-chart.html',
+      'Line Chart': 'line-chart.html',
+      'Pie Chart': 'pie-chart.html',
+      'Area Chart': 'area-chart.html',
+      'Scatter Plot': 'scatter-chart.html',
+      'Table': 'table-widget.html',
+      'KPI Value': 'kpi-widget.html'
+    };
+
+    window.onload = () => {
+      const grid = document.getElementById('gridContainer');
+      for (let i = 0; i < 120; i++) {
+        const tile = document.createElement('div');
+        tile.className = 'grid-tile';
+        grid.appendChild(tile);
+      }
+      checkReturnConfig();
+      renderUI();
+    };
+
+    function handleDragStart(e, type, cat, id = null) {
+      currentDrag = { type, cat, id };
+      if (id) {
+        e.dataTransfer.setData("widgetId", id);
+      }
+    }
+
+    const canvas = document.getElementById('canvas');
+    canvas.ondragover = (e) => {
+      e.preventDefault();
+    };
+
+    // --- UPDATED DROP LOGIC (Precise Placement, No Snapping) ---
+    canvas.ondrop = (e) => {
+      e.preventDefault();
+      const rect = canvas.getBoundingClientRect();
+
+      // Calculation to align center of widget to mouse pointer
+      let finalX = e.clientX - rect.left - 80;
+      let finalY = e.clientY - rect.top - 20;
+
+      if (currentDrag.id) {
+        const index = widgets.findIndex(w => w.id === currentDrag.id);
+        if (index !== -1) {
+          widgets[index].x = finalX;
+          widgets[index].y = finalY;
+        }
+      } else {
+        const newWidget = {
+          id: 'id_' + Date.now(),
+          type: currentDrag.type,
+          category: currentDrag.cat,
+          x: finalX,
+          y: finalY,
+          title: 'Untitled ' + currentDrag.type,
+          value: '0'
+        };
+        widgets.push(newWidget);
+      }
+
+      saveToStorage();
+      renderUI();
+      triggerToast(currentDrag.id ? "Widget moved" : "Widget added");
+      currentDrag = { type: '', cat: '', id: null };
+    };
+
+    function renderUI() {
+      document.querySelectorAll('.widget-card').forEach(w => w.remove());
+      widgets.forEach(w => {
+        const card = document.createElement('div');
+        card.className = 'widget-card';
+        card.style.left = w.x + 'px';
+        card.style.top = w.y + 'px';
+        card.draggable = true;
+
+        card.ondragstart = (e) => {
+          handleDragStart(e, w.type, w.category, w.id);
+          // Makes the movement feel natural by aligning cursor
+          e.dataTransfer.setDragImage(card, 80, 20);
+        };
+
+        card.innerHTML = `
+          <div class="wc-header">
+            <span class="wc-title" onclick="openSettings('${w.id}', '${w.type}')" title="Click to Configure">${w.title}</span>
+            <div class="wc-tools">
+              <button class="wc-tool-btn" onclick="deleteWidget('${w.id}')" title="Delete">
+                <svg class="icon-trash" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+              </button>
+              <button class="wc-tool-btn" onclick="openSettings('${w.id}', '${w.type}')" title="Settings">
+                <svg class="icon-gear" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+              </button>
+            </div>
+          </div>
+          <div class="wc-value">${w.value}</div>
+          <div class="wc-footer">${w.type}</div>
+        `;
+        canvas.appendChild(card);
+      });
+    }
+
+    function openSettings(id, type) {
+      localStorage.setItem('activeWidgetId', id);
+      const targetPage = fileMap[type];
+      if (targetPage) {
+        setTimeout(() => {
+          window.location.href = targetPage;
+        }, 150);
+      }
+    }
+
+    function checkReturnConfig() {
+      const returnData = localStorage.getItem('widgetConfigReturn');
+      if (returnData) {
+        const data = JSON.parse(returnData);
+        const index = widgets.findIndex(w => w.id === data.widgetId);
+        if (index !== -1) {
+          widgets[index].title = data.config.title;
+          widgets[index].value = data.config.value || '0';
+          saveToStorage();
+        }
+        localStorage.removeItem('widgetConfigReturn');
+      }
+    }
+
+    function deleteWidget(id) {
+      widgetToDelete = id;
+      document.getElementById('deleteModal').style.display = 'flex';
+    }
+
+    function closeDeleteModal() {
+      document.getElementById('deleteModal').style.display = 'none';
+      widgetToDelete = null;
+    }
+
+    function confirmDelete() {
+      if (widgetToDelete) {
+        widgets = widgets.filter(w => w.id !== widgetToDelete);
+        saveToStorage();
+        renderUI();
+        triggerToast("Widget removed");
+      }
+      closeDeleteModal();
+    }
+
+    function saveDashboard() {
+      saveToStorage();
+      triggerToast("Dashboard saved! Redirecting...");
+      setTimeout(() => {
+        window.location.href = 'customer-orders.html';
+      }, 1500);
+    }
+
+    function saveToStorage() { localStorage.setItem('my_dashboard_widgets', JSON.stringify(widgets)); }
+
+    function triggerToast(msg) {
+      const t = document.getElementById('toast');
+      document.getElementById('toastMsg').innerText = msg;
+      t.classList.add('show');
+      setTimeout(hideToast, 4000);
+    }
+    function hideToast() { document.getElementById('toast').classList.remove('show'); }
+
+    function toggleAcc(id) {
+      const el = document.getElementById('acc-' + id);
+      const arr = document.getElementById('arr-' + id);
+      if (el.style.display === 'none' || el.style.display === '') {
+        el.style.display = 'flex';
+        arr.innerText = '⌄';
+      } else {
+        el.style.display = 'none';
+        arr.innerText = '❯';
+      }
+    }
+
+    window.onclick = function (event) {
+      let modal = document.getElementById('deleteModal');
+      if (event.target == modal) closeDeleteModal();
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Table - Widget Configuration</title>
+  <style>
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f7f8fa;color:#000;}
+    .page{display:flex;height:100vh;overflow:hidden;}
+
+    /* ── Config Panel ── */
+    .config-panel{width:440px;min-width:440px;background:#fff;border-right:1px solid #e0e0e0;display:flex;flex-direction:column;overflow:hidden;}
+    .cp-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid #e0e0e0;}
+    .cp-header-title{font-size:15px;font-weight:700;color:#000;}
+    .cp-close{width:28px;height:28px;display:flex;align-items:center;justify-content:center;border:none;background:none;cursor:pointer;font-size:20px;color:#555;border-radius:5px;line-height:1;}
+    .cp-close:hover{background:#f0f0f0;}
+
+    /* Tabs */
+    .tab-row{display:flex;padding:12px 20px 0;gap:0;border-bottom:1px solid #e0e0e0;}
+    .tab-btn{flex:1;padding:10px 0;font-size:13.5px;font-weight:600;border:none;cursor:pointer;font-family:inherit;border-radius:6px 6px 0 0;transition:all 0.15s;}
+    .tab-btn.active{background:#3dab7e;color:#fff;}
+    .tab-btn:not(.active){background:#f5f5f5;color:#555;}
+    .tab-btn:not(.active):hover{background:#e8e8e8;}
+
+    .cp-body{flex:1;overflow-y:auto;padding:20px;}
+    .cp-footer{padding:14px 20px;border-top:1px solid #e0e0e0;display:flex;justify-content:flex-end;gap:10px;}
+
+    /* Floating label fields */
+    .float-field{position:relative;margin-bottom:14px;}
+    .float-input,.float-select{width:100%;padding:18px 14px 8px;border:1px solid #ccc;border-radius:8px;font-size:14px;color:#000;font-family:inherit;background:#fff;outline:none;transition:border-color 0.2s;appearance:none;}
+    .float-textarea{width:100%;padding:22px 14px 8px;border:1px solid #ccc;border-radius:8px;font-size:14px;color:#000;font-family:inherit;background:#fff;outline:none;transition:border-color 0.2s;resize:vertical;min-height:80px;}
+    .float-input:focus,.float-select:focus,.float-textarea:focus{border-color:#3dab7e;}
+    .float-input.err{border-color:#e53e3e;}
+    .float-input[readonly]{background:#f5f5f5;color:#777;cursor:not-allowed;}
+    .float-label{position:absolute;left:14px;top:14px;font-size:14px;color:#aaa;pointer-events:none;transition:all 0.15s;}
+    .float-label.active{top:6px;font-size:11px;color:#3dab7e;}
+    .float-label .req{color:#e53e3e;}
+    .err-msg{font-size:11px;color:#e53e3e;margin-top:4px;display:none;}
+    .err-msg.show{display:block;}
+    .sel-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;}
+
+    /* Spinner */
+    .spin-wrap{position:relative;}
+    .spin-arrows{position:absolute;right:10px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:2px;}
+    .spin-btn{border:none;background:none;cursor:pointer;color:#aaa;padding:0;line-height:1;font-size:10px;}
+    .spin-btn:hover{color:#3dab7e;}
+
+    .section-title{font-size:14px;font-weight:700;color:#000;margin:18px 0 12px;}
+
+    /* Multiselect for columns */
+    .multiselect-wrap{position:relative;margin-bottom:14px;}
+    .multiselect-box{min-height:46px;padding:6px 36px 6px 10px;border:1px solid #ccc;border-radius:8px;cursor:pointer;transition:border-color 0.2s;display:flex;flex-wrap:wrap;gap:4px;align-items:center;}
+    .multiselect-box:hover{border-color:#3dab7e;}
+    .multiselect-box.open{border-color:#3dab7e;}
+    .multiselect-box.err{border-color:#e53e3e;}
+    .ms-placeholder{font-size:14px;color:#aaa;line-height:1.8;}
+    .ms-label{position:absolute;left:10px;top:-8px;font-size:11px;color:#3dab7e;background:#fff;padding:0 4px;}
+    .ms-tag{display:inline-flex;align-items:center;gap:4px;background:#3dab7e;color:#fff;border-radius:4px;padding:2px 8px;font-size:12px;font-weight:500;}
+    .ms-tag-x{cursor:pointer;font-size:14px;line-height:1;opacity:0.8;}
+    .ms-tag-x:hover{opacity:1;}
+    .ms-arrow{position:absolute;right:12px;top:50%;transform:translateY(-50%);pointer-events:none;}
+    .ms-dropdown{position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,0.1);z-index:50;max-height:200px;overflow-y:auto;display:none;}
+    .ms-dropdown.open{display:block;}
+    .ms-option{padding:10px 14px;font-size:13.5px;color:#000;cursor:pointer;display:flex;align-items:center;gap:8px;transition:background 0.1s;}
+    .ms-option:hover{background:#f5f5f5;}
+    .ms-option.selected{color:#3dab7e;font-weight:500;}
+    .ms-option input[type=checkbox]{accent-color:#3dab7e;width:14px;height:14px;flex-shrink:0;}
+
+    /* Checkbox */
+    .check-row{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+    .check-row input[type=checkbox]{width:15px;height:15px;accent-color:#3dab7e;cursor:pointer;flex-shrink:0;}
+    .check-row label{font-size:14px;color:#000;cursor:pointer;}
+
+    /* Filter section */
+    .filter-section{background:#f9fafb;border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin-bottom:14px;display:none;}
+    .filter-section.show{display:block;}
+    .filter-row{display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px;}
+    .filter-row2{margin-bottom:10px;}
+    .filter-input{width:100%;padding:9px 12px;border:1px solid #ccc;border-radius:7px;font-size:13px;color:#000;font-family:inherit;outline:none;}
+    .filter-input:focus{border-color:#3dab7e;}
+    .filter-select{padding:9px 28px 9px 10px;border:1px solid #ccc;border-radius:7px;font-size:13px;color:#000;font-family:inherit;appearance:none;background:#fff;outline:none;cursor:pointer;}
+    .filter-select:focus{border-color:#3dab7e;}
+    .op-wrap{position:relative;}
+    .op-arrow{position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;}
+    .add-filter-btn{display:flex;align-items:center;gap:5px;background:none;border:none;color:#3dab7e;font-size:13px;font-weight:600;cursor:pointer;padding:4px 0;font-family:inherit;}
+    .add-filter-btn:hover{opacity:0.8;}
+    .filter-item{background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:10px;margin-bottom:8px;position:relative;}
+    .filter-item-remove{position:absolute;top:8px;right:8px;background:none;border:none;cursor:pointer;color:#e53e3e;font-size:16px;line-height:1;}
+
+    /* Styling tab */
+    .style-field{margin-bottom:18px;}
+    .style-label{font-size:13px;font-weight:600;color:#000;margin-bottom:8px;display:block;}
+    .font-size-wrap{display:flex;align-items:center;gap:8px;}
+    .font-size-input{width:80px;padding:9px 12px;border:1px solid #ccc;border-radius:7px;font-size:14px;color:#000;font-family:inherit;outline:none;text-align:center;}
+    .font-size-input:focus{border-color:#3dab7e;}
+    .px-label{font-size:13px;color:#555;font-weight:500;}
+    .color-row{display:flex;align-items:center;gap:10px;}
+    .color-picker-wrap{position:relative;width:36px;height:36px;border:1px solid #ccc;border-radius:6px;overflow:hidden;cursor:pointer;}
+    .color-picker-wrap input[type=color]{position:absolute;inset:0;width:100%;height:100%;border:none;cursor:pointer;padding:0;opacity:0;}
+    .color-swatch{width:100%;height:100%;border-radius:5px;}
+    .hex-input{flex:1;padding:9px 12px;border:1px solid #ccc;border-radius:7px;font-size:13.5px;color:#000;font-family:monospace;outline:none;}
+    .hex-input:focus{border-color:#3dab7e;}
+
+    /* Buttons */
+    .btn-cancel{padding:9px 22px;background:#fff;border:1.5px solid #ccc;border-radius:7px;font-size:13.5px;font-weight:500;color:#000;cursor:pointer;font-family:inherit;}
+    .btn-cancel:hover{border-color:#999;}
+    .btn-add{padding:9px 26px;background:#3dab7e;border:none;border-radius:7px;font-size:13.5px;font-weight:600;color:#fff;cursor:pointer;font-family:inherit;}
+    .btn-add:hover{background:#2e8f67;}
+
+    /* ── Preview Area ── */
+    .preview-area{flex:1;background:#f7f8fa;overflow-y:auto;padding:24px;}
+    .preview-section-label{font-size:11px;font-weight:600;color:#aaa;letter-spacing:0.6px;text-transform:uppercase;margin-bottom:10px;}
+    .preview-card{background:#fff;border:1.5px solid #ddd;border-radius:10px;padding:16px;margin-bottom:16px;}
+    .preview-card-title{font-size:14px;font-weight:600;color:#000;margin-bottom:14px;}
+    .preview-table-wrap{overflow-x:auto;}
+    .preview-table{width:100%;border-collapse:collapse;}
+    .preview-table th{padding:10px 14px;font-size:13px;font-weight:600;color:#000;text-align:left;border-bottom:1px solid #e5e7eb;}
+    .preview-table td{padding:10px 14px;font-size:13px;color:#000;border-bottom:1px solid #f0f0f0;}
+    .preview-table tbody tr:last-child td{border-bottom:none;}
+    .preview-table tbody tr:hover{background:#fafafa;}
+    .no-col-msg{font-size:13px;color:#aaa;text-align:center;padding:24px;border:1px dashed #ddd;border-radius:6px;}
+
+    /* Toast */
+    .toast{position:fixed;top:20px;right:24px;background:#3dab7e;color:#fff;display:flex;align-items:center;gap:10px;padding:11px 16px;border-radius:8px;font-size:13.5px;font-weight:500;z-index:9999;box-shadow:0 4px 14px rgba(0,0,0,0.15);opacity:0;pointer-events:none;transition:opacity 0.3s;max-width:380px;}
+    .toast.show{opacity:1;pointer-events:auto;}
+    .toast-icon{width:22px;height:22px;background:rgba(255,255,255,0.3);border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+    .toast-x{cursor:pointer;margin-left:6px;font-size:17px;opacity:0.8;line-height:1;}
+    .toast-x:hover{opacity:1;}
+  </style>
+</head>
+<body>
+
+<!-- Toast -->
+<div class="toast" id="toast">
+  <div class="toast-icon"><svg width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke="#fff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+  <span id="toastMsg"></span>
+  <span class="toast-x" onclick="hideToast()">×</span>
+</div>
+
+<div class="page">
+
+  <!-- ══════════════════════════════
+       LEFT — WIDGET CONFIGURATION
+  ══════════════════════════════ -->
+  <div class="config-panel">
+    <div class="cp-header">
+      <span class="cp-header-title">Widget configuration</span>
+      <button class="cp-close" onclick="goBack()">×</button>
+    </div>
+
+    <!-- Data / Styling tabs -->
+    <div class="tab-row">
+      <button class="tab-btn active" id="tabData" onclick="switchTab('data')">Data</button>
+      <button class="tab-btn" id="tabStyling" onclick="switchTab('styling')">Styling</button>
+    </div>
+
+    <div class="cp-body">
+
+      <!-- ════════ DATA TAB ════════ -->
+      <div id="dataTab">
+
+        <!-- Widget title -->
+        <div class="float-field">
+          <input class="float-input" id="f-title" type="text" value="Untitled" oninput="syncLabel(this);livePreview()"/>
+          <label class="float-label active">Widget title <span class="req">*</span></label>
+          <span class="err-msg" id="e-title">Please fill the field</span>
+        </div>
+
+        <!-- Widget type readonly -->
+        <div class="float-field">
+          <input class="float-input" id="f-type" type="text" value="Table" readonly/>
+          <label class="float-label active">Widget type <span class="req">*</span></label>
+        </div>
+
+        <!-- Description -->
+        <div class="float-field">
+          <textarea class="float-textarea" id="f-desc" oninput="syncLabelById('f-desc','l-desc')"></textarea>
+          <label class="float-label" id="l-desc">Description</label>
+        </div>
+
+        <!-- Widget size -->
+        <div class="section-title">Widget size</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="float-field spin-wrap">
+            <input class="float-input" id="f-width" type="number" value="5" min="1" oninput="syncLabel(this)"/>
+            <label class="float-label active">Width (Columns) <span class="req">*</span></label>
+            <div class="spin-arrows">
+              <button class="spin-btn" onclick="spin('f-width',1)">▲</button>
+              <button class="spin-btn" onclick="spin('f-width',-1)">▼</button>
+            </div>
+          </div>
+          <div class="float-field spin-wrap">
+            <input class="float-input" id="f-height" type="number" value="5" min="1" oninput="syncLabel(this)"/>
+            <label class="float-label active">Height (Rows) <span class="req">*</span></label>
+            <div class="spin-arrows">
+              <button class="spin-btn" onclick="spin('f-height',1)">▲</button>
+              <button class="spin-btn" onclick="spin('f-height',-1)">▼</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Data setting -->
+        <div class="section-title">Data setting</div>
+
+        <!-- Choose columns (multiselect) -->
+        <div class="multiselect-wrap" id="msWrap">
+          <div class="multiselect-box" id="msBox" onclick="toggleMs()">
+            <span class="ms-label">Choose columns <span style="color:#e53e3e">*</span></span>
+            <div id="msTags" style="display:flex;flex-wrap:wrap;gap:4px;width:100%;"></div>
+            <span id="msPlaceholder" class="ms-placeholder" style="display:none;">Select columns</span>
+            <svg class="ms-arrow" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round"/></svg>
+          </div>
+          <div class="ms-dropdown" id="msDropdown">
+            <!-- Options injected by JS -->
+          </div>
+          <span class="err-msg" id="e-columns">Please select at least one column</span>
+        </div>
+
+        <!-- Sort by -->
+        <div class="float-field" style="position:relative;">
+          <select class="float-select" id="f-sortby" onchange="syncLabel(this)">
+            <option value=""></option>
+            <option value="Ascending">Ascending</option>
+            <option value="Descending">Descending</option>
+          </select>
+          <label class="float-label">Sort by</label>
+          <svg class="sel-arrow" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+
+        <!-- Pagination -->
+        <div class="float-field" style="position:relative;">
+          <select class="float-select" id="f-pagination" onchange="syncLabel(this)">
+            <option value=""></option>
+            <option value="5">5</option>
+            <option value="10">10</option>
+            <option value="15">15</option>
+          </select>
+          <label class="float-label">Pagination</label>
+          <svg class="sel-arrow" width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round"/></svg>
+        </div>
+
+        <!-- Apply filter -->
+        <div class="check-row">
+          <input type="checkbox" id="f-filter" onchange="toggleFilterSection()"/>
+          <label for="f-filter">Apply filter</label>
+        </div>
+
+        <!-- Filter section (shown when apply filter is checked) -->
+        <div class="filter-section" id="filterSection">
+          <div id="filterItems"></div>
+          <div style="display:grid;grid-template-columns:1fr auto;gap:8px;margin-bottom:10px;" id="activeFilterRow">
+            <div style="position:relative;">
+              <select class="filter-select" id="f-attr" style="width:100%;">
+                <option value="">Choose attribute</option>
+                <option value="Product">Product</option>
+                <option value="Quantity">Quantity</option>
+                <option value="Status">Status</option>
+              </select>
+              <svg style="position:absolute;right:8px;top:50%;transform:translateY(-50%);pointer-events:none;" width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <div class="op-wrap">
+              <select class="filter-select" id="f-operator">
+                <option value="">Operator</option>
+                <option value="=">=</option>
+                <option value="≠">≠</option>
+                <option value=">">&gt;</option>
+                <option value=">=">&gt;=</option>
+                <option value="<">&lt;</option>
+                <option value="<=">&lt;=</option>
+                <option value="Contains">Contains</option>
+              </select>
+              <svg class="op-arrow" width="12" height="12" fill="none" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+          </div>
+          <div style="margin-bottom:10px;">
+            <input class="filter-input" id="f-value" type="text" placeholder="Value"/>
+          </div>
+          <button class="add-filter-btn" onclick="addFilter()">
+            <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="#3dab7e" stroke-width="2"/><path d="M12 8v8M8 12h8" stroke="#3dab7e" stroke-width="2" stroke-linecap="round"/></svg>
+            Add filter
+          </button>
+        </div>
+
+      </div><!-- end dataTab -->
+
+      <!-- ════════ STYLING TAB ════════ -->
+      <div id="stylingTab" style="display:none;">
+
+        <!-- Font size -->
+        <div class="style-field">
+          <label class="style-label">Font size <span style="color:#e53e3e">*</span></label>
+          <div class="font-size-wrap">
+            <input class="font-size-input" id="f-fontsize" type="number" value="14" min="12" max="20" oninput="clampFontSize();livePreview()"/>
+            <span class="px-label">px</span>
+            <div class="spin-arrows" style="position:relative;transform:none;right:auto;top:auto;display:flex;flex-direction:column;gap:2px;margin-left:4px;">
+              <button class="spin-btn" onclick="spinFont(1)">▲</button>
+              <button class="spin-btn" onclick="spinFont(-1)">▼</button>
+            </div>
+          </div>
+          <span style="font-size:11px;color:#aaa;margin-top:4px;display:block;">Min: 12px — Max: 20px</span>
+        </div>
+
+        <!-- Header background -->
+        <div class="style-field">
+          <label class="style-label">Header background</label>
+          <div class="color-row">
+            <div class="color-picker-wrap">
+              <div class="color-swatch" id="colorSwatch" style="background:#D8D8D8;"></div>
+              <input type="color" id="f-headercolor" value="#D8D8D8" oninput="onColorPick(this.value)"/>
+            </div>
+            <input class="hex-input" id="f-hexcolor" type="text" value="# D8D8D8" oninput="onHexInput(this.value)" maxlength="9"/>
+          </div>
+        </div>
+
+      </div><!-- end stylingTab -->
+
+    </div>
+
+    <div class="cp-footer">
+      <button class="btn-cancel" onclick="goBack()">Cancel</button>
+      <button class="btn-add" id="addBtn" onclick="saveWidget()">Add</button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════
+       RIGHT — LIVE PREVIEW
+  ══════════════════════════════ -->
+  <div class="preview-area">
+    <div class="preview-section-label">Preview</div>
+    <div class="preview-card" id="previewCard">
+      <div class="preview-card-title" id="previewTitle">Untitled</div>
+      <div class="preview-table-wrap">
+        <div id="previewTableContainer">
+          <div class="no-col-msg">Select columns to preview the table</div>
+        </div>
+      </div>
+    </div>
+    <div style="background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:14px 16px;font-size:13px;color:#555;line-height:1.7;">
+      <strong style="color:#000;display:block;margin-bottom:4px;">Table widget</strong>
+      Select columns to display in your table widget.
+      Use Sort by and Pagination to control the data display.
+      Apply filter to narrow down the data shown.
+      Click <strong>Add</strong> to place this widget on your canvas.
+    </div>
+  </div>
+
+</div>
+
+<script>
+  var activeWidgetId = null;
+  var selectedColumns = [];
+  var filters = [];
+  var filterCounter = 0;
+  var isDropdownOpen = false;
+
+  /* All available columns */
+  var allColumns = [
+    'Customer ID','Customer name','Email id','Address','Order date',
+    'Product','Created by','Status','Total amount','Unit price','Quantity'
+  ];
+
+  /* Sample preview data */
+  var sampleData = {
+    'Customer ID':   ['CUST-0001','CUST-0002','CUST-0003'],
+    'Customer name': ['John doe','Peter parker','Emma Wilson'],
+    'Email id':      ['john@mail.com','peter@mail.com','emma@mail.com'],
+    'Address':       ['798 3E Rue, Canada','120 King St, Canada','55 Bloor St, Canada'],
+    'Order date':    ['Dec 02, 2025','Dec 01, 2025','Dec 03, 2025'],
+    'Product':       ['Fiber Internet 300 Mbps','5G Unlimited Mobile Plan','Fiber Internet 1 Gbps'],
+    'Created by':    ['Mr. Michael Harris','Mr. Ryan Cooper','Ms. Olivia Carter'],
+    'Status':        ['Pending','Completed','In progress'],
+    'Total amount':  ['$ 100.00','$ 240.00','$ 300.00'],
+    'Unit price':    ['$ 100.00','$ 120.00','$ 150.00'],
+    'Quantity':      ['1','2','2']
+  };
+
+  /* ── On load ── */
+  window.addEventListener('load', function() {
+    buildMsDropdown();
+    activeWidgetId = localStorage.getItem('activeWidgetId');
+    var raw = localStorage.getItem('activeWidgetData');
+    if (raw) {
+      try {
+        var w = JSON.parse(raw);
+        if (w.configured) {
+          document.getElementById('f-title').value  = w.title  || 'Untitled';
+          document.getElementById('f-desc').value   = w.desc   || '';
+          document.getElementById('f-width').value  = w.width  || 5;
+          document.getElementById('f-height').value = w.height || 5;
+          document.getElementById('f-sortby').value     = w.sortBy     || '';
+          document.getElementById('f-pagination').value = w.pagination || '';
+          /* Restore columns */
+          if (w.columns && w.columns.length) {
+            selectedColumns = w.columns.slice();
+            renderMsTags();
+            updateMsOptions();
+          }
+          /* Restore styling */
+          if (w.fontSize) {
+            document.getElementById('f-fontsize').value = w.fontSize;
+          }
+          if (w.headerColor) {
+            setColor(w.headerColor);
+          }
+          /* Sync labels */
+          syncLabel(document.getElementById('f-sortby'));
+          syncLabel(document.getElementById('f-pagination'));
+          document.getElementById('addBtn').textContent = 'Save';
+        }
+      } catch(e) {}
+    }
+    livePreview();
+  });
+
+  /* ── Tab switch ── */
+  function switchTab(tab) {
+    document.getElementById('dataTab').style.display    = tab === 'data'    ? 'block' : 'none';
+    document.getElementById('stylingTab').style.display = tab === 'styling' ? 'block' : 'none';
+    document.getElementById('tabData').classList.toggle('active',    tab === 'data');
+    document.getElementById('tabStyling').classList.toggle('active', tab === 'styling');
+  }
+
+  /* ════════════════════════
+     MULTISELECT
+  ════════════════════════ */
+  function buildMsDropdown() {
+    var dd = document.getElementById('msDropdown');
+    dd.innerHTML = allColumns.map(function(col) {
+      return '<div class="ms-option" id="opt-'+col.replace(/\s/g,'_')+'" onclick="toggleColumn(\''+col+'\')">' +
+        '<input type="checkbox" id="chk-'+col.replace(/\s/g,'_')+'"/> ' + col +
+        '</div>';
+    }).join('');
+  }
+
+  function toggleMs() {
+    isDropdownOpen = !isDropdownOpen;
+    document.getElementById('msDropdown').classList.toggle('open', isDropdownOpen);
+    document.getElementById('msBox').classList.toggle('open', isDropdownOpen);
+  }
+
+  function toggleColumn(col) {
+    var idx = selectedColumns.indexOf(col);
+    if (idx === -1) {
+      selectedColumns.push(col);
+    } else {
+      selectedColumns.splice(idx, 1);
+    }
+    renderMsTags();
+    updateMsOptions();
+    livePreview();
+    event.stopPropagation();
+  }
+
+  function removeColumn(col) {
+    selectedColumns = selectedColumns.filter(function(c){ return c !== col; });
+    renderMsTags();
+    updateMsOptions();
+    livePreview();
+  }
+
+  function renderMsTags() {
+    var tagsEl = document.getElementById('msTags');
+    var ph     = document.getElementById('msPlaceholder');
+    if (selectedColumns.length === 0) {
+      tagsEl.innerHTML = '';
+      ph.style.display = 'block';
+    } else {
+      ph.style.display = 'none';
+      tagsEl.innerHTML = selectedColumns.map(function(col) {
+        return '<span class="ms-tag">' + col +
+          '<span class="ms-tag-x" onclick="event.stopPropagation();removeColumn(\''+col+'\')">×</span></span>';
+      }).join('');
+    }
+  }
+
+  function updateMsOptions() {
+    allColumns.forEach(function(col) {
+      var id  = col.replace(/\s/g,'_');
+      var opt = document.getElementById('opt-' + id);
+      var chk = document.getElementById('chk-' + id);
+      if (opt && chk) {
+        var sel = selectedColumns.indexOf(col) !== -1;
+        chk.checked = sel;
+        opt.classList.toggle('selected', sel);
+      }
+    });
+  }
+
+  /* Close dropdown on outside click */
+  document.addEventListener('click', function(e) {
+    if (!e.target.closest('#msWrap')) {
+      isDropdownOpen = false;
+      document.getElementById('msDropdown').classList.remove('open');
+      document.getElementById('msBox').classList.remove('open');
+    }
+  });
+
+  /* ════════════════════════
+     FILTER
+  ════════════════════════ */
+  function toggleFilterSection() {
+    var checked = document.getElementById('f-filter').checked;
+    document.getElementById('filterSection').classList.toggle('show', checked);
+  }
+
+  function addFilter() {
+    var attr = document.getElementById('f-attr').value;
+    var op   = document.getElementById('f-operator').value;
+    var val  = document.getElementById('f-value').value.trim();
+    if (!attr || !op || !val) return;
+
+    filterCounter++;
+    var fid = 'fi-' + filterCounter;
+    filters.push({ id: fid, attr: attr, op: op, val: val });
+
+    var container = document.getElementById('filterItems');
+    var item = document.createElement('div');
+    item.className = 'filter-item';
+    item.id = fid;
+    item.innerHTML =
+      '<button class="filter-item-remove" onclick="removeFilter(\''+fid+'\')">×</button>' +
+      '<strong style="font-size:12px;color:#3dab7e;">' + attr + '</strong>' +
+      '<span style="font-size:12px;color:#555;margin:0 6px;">' + op + '</span>' +
+      '<span style="font-size:12px;color:#000;">' + val + '</span>';
+    container.appendChild(item);
+
+    /* Reset inputs */
+    document.getElementById('f-attr').value     = '';
+    document.getElementById('f-operator').value = '';
+    document.getElementById('f-value').value    = '';
+  }
+
+  function removeFilter(id) {
+    var el = document.getElementById(id);
+    if (el) el.remove();
+    filters = filters.filter(function(f){ return f.id !== id; });
+  }
+
+  /* ════════════════════════
+     STYLING
+  ════════════════════════ */
+  function clampFontSize() {
+    var el  = document.getElementById('f-fontsize');
+    var val = parseInt(el.value) || 14;
+    if (val < 12) el.value = 12;
+    if (val > 20) el.value = 20;
+  }
+
+  function spinFont(delta) {
+    var el  = document.getElementById('f-fontsize');
+    var val = Math.min(20, Math.max(12, (parseInt(el.value) || 14) + delta));
+    el.value = val;
+    livePreview();
+  }
+
+  function setColor(hex) {
+    /* Normalize hex */
+    var clean = hex.replace(/[^#a-fA-F0-9]/g,'');
+    if (!clean.startsWith('#')) clean = '#' + clean;
+    document.getElementById('f-headercolor').value = clean;
+    document.getElementById('colorSwatch').style.background = clean;
+    document.getElementById('f-hexcolor').value = '# ' + clean.replace('#','');
+    livePreview();
+  }
+
+  function onColorPick(val) { setColor(val); }
+
+  function onHexInput(val) {
+    var clean = val.replace(/[^a-fA-F0-9]/g,'');
+    if (clean.length === 6) {
+      setColor('#' + clean);
+    }
+  }
+
+  /* ════════════════════════
+     LIVE PREVIEW
+  ════════════════════════ */
+  function livePreview() {
+    var title    = document.getElementById('f-title').value.trim();
+    var fontSize = parseInt(document.getElementById('f-fontsize').value) || 14;
+    var headerBg = document.getElementById('f-headercolor').value || '#D8D8D8';
+
+    document.getElementById('previewTitle').textContent = title || 'Untitled';
+
+    var container = document.getElementById('previewTableContainer');
+    if (selectedColumns.length === 0) {
+      container.innerHTML = '<div class="no-col-msg">Select columns to preview the table</div>';
+      return;
+    }
+
+    var html = '<table class="preview-table" style="font-size:' + fontSize + 'px;">';
+    /* Header */
+    html += '<thead><tr>';
+    selectedColumns.forEach(function(col) {
+      html += '<th style="background:' + headerBg + ';font-size:' + fontSize + 'px;">' + col + '</th>';
+    });
+    html += '</tr></thead>';
+    /* Body - 3 sample rows */
+    html += '<tbody>';
+    for (var i = 0; i < 3; i++) {
+      html += '<tr>';
+      selectedColumns.forEach(function(col) {
+        var val = sampleData[col] ? sampleData[col][i] : '—';
+        html += '<td>' + val + '</td>';
+      });
+      html += '</tr>';
+    }
+    html += '</tbody></table>';
+
+    container.innerHTML = html;
+  }
+
+  /* ════════════════════════
+     HELPERS
+  ════════════════════════ */
+  function syncLabel(el) {
+    var lbl = el.parentElement.querySelector('.float-label');
+    if (lbl) lbl.classList.toggle('active', String(el.value).trim() !== '');
+  }
+  function syncLabelById(inputId, labelId) {
+    var el  = document.getElementById(inputId);
+    var lbl = document.getElementById(labelId);
+    if (lbl) lbl.classList.toggle('active', el && el.value.trim() !== '');
+  }
+  function spin(id, delta) {
+    var el = document.getElementById(id);
+    el.value = Math.max(1, (parseInt(el.value) || 1) + delta);
+  }
+
+  /* ════════════════════════
+     SAVE
+  ════════════════════════ */
+  function saveWidget() {
+    /* Validate */
+    var titleEl = document.getElementById('f-title');
+    var titleEm = document.getElementById('e-title');
+    var colEm   = document.getElementById('e-columns');
+    var valid   = true;
+
+    if (!titleEl.value.trim()) {
+      titleEl.classList.add('err');
+      titleEm.classList.add('show');
+      valid = false;
+    } else {
+      titleEl.classList.remove('err');
+      titleEm.classList.remove('show');
+    }
+
+    if (selectedColumns.length === 0) {
+      document.getElementById('msBox').classList.add('err');
+      colEm.classList.add('show');
+      valid = false;
+    } else {
+      document.getElementById('msBox').classList.remove('err');
+      colEm.classList.remove('show');
+    }
+
+    if (!valid) { switchTab('data'); return; }
+
+    var config = {
+      type:        'Table',
+      wtype:       'table',
+      title:       document.getElementById('f-title').value.trim(),
+      desc:        document.getElementById('f-desc').value,
+      width:       parseInt(document.getElementById('f-width').value)      || 5,
+      height:      parseInt(document.getElementById('f-height').value)     || 5,
+      columns:     selectedColumns.slice(),
+      sortBy:      document.getElementById('f-sortby').value,
+      pagination:  document.getElementById('f-pagination').value,
+      applyFilter: document.getElementById('f-filter').checked,
+      filters:     filters.slice(),
+      fontSize:    parseInt(document.getElementById('f-fontsize').value)   || 14,
+      headerColor: document.getElementById('f-headercolor').value,
+      configured:  true
+    };
+
+    localStorage.setItem('widgetConfigReturn', JSON.stringify({
+      widgetId: activeWidgetId,
+      config:   config
+    }));
+
+    showToast('All set! Your new widget have been added successfully!');
+    setTimeout(goBack, 1500);
+  }
+
+  function goBack() { window.location.href = 'configure.html'; }
+
+  var toastTimer = null;
+  function showToast(msg) {
+    document.getElementById('toastMsg').textContent = msg;
+    document.getElementById('toast').classList.add('show');
+    if (toastTimer) clearTimeout(toastTimer);
+    toastTimer = setTimeout(hideToast, 3500);
+  }
+  function hideToast() { document.getElementById('toast').classList.remove('show'); }
+</script>
+</body>
+</html>

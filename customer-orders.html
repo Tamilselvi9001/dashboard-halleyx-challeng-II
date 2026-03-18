@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Customer Orders</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #fff;
+      color: #000;
+    }
+
+    .wrap {
+      padding: 28px 36px;
+      min-height: 100vh;
+    }
+
+    .page-title {
+      font-size: 24px;
+      font-weight: 700;
+      color: #000;
+      margin-bottom: 6px;
+    }
+
+    .page-sub {
+      font-size: 13.5px;
+      color: #000;
+      margin-bottom: 18px;
+    }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      border-bottom: 1.5px solid #e0e0e0;
+      margin-bottom: 0;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #000;
+      cursor: pointer;
+      border: none;
+      border-bottom: 2.5px solid transparent;
+      margin-bottom: -1.5px;
+      background: none;
+      font-family: inherit;
+      transition: color 0.15s;
+    }
+
+    .tab:hover {
+      color: #3dab7e;
+    }
+
+    .tab.active {
+      color: #3dab7e;
+      border-bottom-color: #3dab7e;
+    }
+
+    /* Dashboard Empty State */
+    .empty-area {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 480px;
+    }
+
+    .empty-icon-box {
+      width: 68px;
+      height: 68px;
+      border: 2px solid #c5c5c5;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 18px;
+      background: #fff;
+    }
+
+    .empty-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 8px;
+    }
+
+    .empty-sub {
+      font-size: 13px;
+      color: #000;
+      margin-bottom: 20px;
+    }
+
+    .config-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 9px 20px;
+      background: #fff;
+      border: 1.5px solid #3dab7e;
+      color: #000;
+      border-radius: 7px;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.15s, background 0.15s;
+    }
+
+    .config-btn:hover {
+      color: #3dab7e;
+      background: #f4fdf9;
+    }
+
+    /* Table Empty State */
+    .table-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 480px;
+    }
+
+    .table-empty-icon {
+      margin-bottom: 20px;
+    }
+
+    .table-empty-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: #000;
+      margin-bottom: 8px;
+    }
+
+    .table-empty-sub {
+      font-size: 13px;
+      color: #555;
+      margin-bottom: 22px;
+    }
+
+    .create-order-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: #3dab7e;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      font-family: inherit;
+      transition: background 0.15s;
+    }
+
+    .create-order-btn:hover {
+      background: #2e8f67;
+    }
+
+    /* ── MODAL OVERLAY ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.35);
+      z-index: 300;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.show {
+      display: flex;
+    }
+
+    /* Order form modal */
+    .form-modal {
+      background: #fff;
+      border-radius: 12px;
+      padding: 32px;
+      width: 700px;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+    }
+
+    .form-modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+    }
+
+    .form-modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      color: #000;
+    }
+
+    .modal-x {
+      width: 28px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 20px;
+      color: #555;
+      border-radius: 5px;
+      line-height: 1;
+    }
+
+    .modal-x:hover {
+      background: #f0f0f0;
+    }
+
+    .form-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #000;
+      margin-bottom: 16px;
+    }
+
+    /* Floating label fields */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .float-field {
+      position: relative;
+    }
+
+    .float-field.full {
+      grid-column: 1/-1;
+    }
+
+    .float-input,
+    .float-select {
+      width: 100%;
+      padding: 18px 14px 8px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #000;
+      font-family: inherit;
+      background: #fff;
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+    }
+
+    .float-input:focus,
+    .float-select:focus {
+      border-color: #3dab7e;
+    }
+
+    .float-input.err,
+    .float-select.err {
+      border-color: #e53e3e;
+    }
+
+    .float-input[readonly] {
+      background: #f9fafb;
+      color: #555;
+      cursor: not-allowed;
+    }
+
+    .float-label {
+      position: absolute;
+      left: 14px;
+      top: 14px;
+      font-size: 14px;
+      color: #aaa;
+      pointer-events: none;
+      transition: all 0.15s;
+    }
+
+    .float-label.active {
+      top: 6px;
+      font-size: 11px;
+      color: #3dab7e;
+    }
+
+    .float-label .req {
+      color: #e53e3e;
+    }
+
+    .float-input.err~.float-label,
+    .float-select.err~.float-label {
+      color: #e53e3e;
+    }
+
+    .err-msg {
+      font-size: 11px;
+      color: #e53e3e;
+      margin-top: 4px;
+      display: none;
+    }
+
+    .err-msg.show {
+      display: block;
+    }
+
+    .sel-arrow {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      pointer-events: none;
+    }
+
+    .qty-wrap {
+      position: relative;
+    }
+
+    .qty-arrows {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .qty-arrow {
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: #999;
+      padding: 0;
+      line-height: 1;
+      font-size: 11px;
+    }
+
+    .qty-arrow:hover {
+      color: #3dab7e;
+    }
+
+    .form-footer {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid #f0f0f0;
+    }
+
+    .btn-cancel-form {
+      padding: 10px 24px;
+      background: #fff;
+      border: 1.5px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #000;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-cancel-form:hover {
+      border-color: #999;
+    }
+
+    .btn-submit-form {
+      padding: 10px 28px;
+      background: #3dab7e;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .btn-submit-form:hover {
+      background: #2e8f67;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- ── Create Order Modal ── -->
+  <div class="modal-overlay" id="orderModal">
+    <div class="form-modal">
+      <div class="form-modal-head">
+        <span class="form-modal-title">Create order</span>
+        <button class="modal-x" onclick="closeOrderModal()">×</button>
+      </div>
+
+      <div class="form-section-title">Customer Information</div>
+      <div class="form-grid">
+        <div class="float-field">
+          <input class="float-input" id="f-fname" type="text" oninput="syncLabel(this)" />
+          <label class="float-label" for="f-fname">First name <span class="req">*</span></label>
+          <span class="err-msg" id="e-fname">Please fill the field</span>
+        </div>
+        <div class="float-field">
+          <input class="float-input" id="f-email" type="text" oninput="syncLabel(this)" />
+          <label class="float-label" for="f-email">Email id <span class="req">*</span></label>
+          <span class="err-msg" id="e-email">Please fill the field</span>
+        </div>
+        <div class="float-field">
+          <input class="float-input" id="f-lname" type="text" oninput="syncLabel(this)" />
+          <label class="float-label" for="f-lname">Last name <span class="req">*</span></label>
+          <span class="err-msg" id="e-lname">Please fill the field</span>
+        </div>
+        <div class="float-field">
+          <input class="float-input" id="f-phone" type="text" oninput="syncLabel(this)" />
+          <label class="float-label" for="f-phone">Phone number <span class="req">*</span></label>
+          <span class="err-msg" id="e-phone">Please fill the field</span>
+        </div>
+        <div class="float-field full">
+          <input class="float-input" id="f-street" type="text" oninput="syncLabel(this)" />
+          <label class="float-label" for="f-street">Street Address <span class="req">*</span></label>
+          <span class="err-msg" id="e-street">Please fill the field</span>
+        </div>
+        <div class="float-field">
+          <input class="float-input" id="f-city" type="text" oninput="syncLabel(this)" />
+          <label class="float-label" for="f-city">City <span class="req">*</span></label>
+          <span class="err-msg" id="e-city">Please fill the field</span>
+        </div>
+        <div class="float-field">
+          <input class="float-input" id="f-state" type="text" oninput="syncLabel(this)" />
+          <label class="float-label" for="f-state">State / Province <span class="req">*</span></label>
+          <span class="err-msg" id="e-state">Please fill the field</span>
+        </div>
+        <div class="float-field">
+          <input class="float-input" id="f-postal" type="text" oninput="syncLabel(this)" />
+          <label class="float-label" for="f-postal">Postal code <span class="req">*</span></label>
+          <span class="err-msg" id="e-postal">Please fill the field</span>
+        </div>
+        <div class="float-field" style="position:relative;">
+          <select class="float-select" id="f-country" onchange="syncLabel(this)">
+            <option value=""></option>
+            <option>United States</option>
+            <option>Canada</option>
+            <option>Australia</option>
+            <option>Singapore</option>
+            <option>Hong Kong</option>
+          </select>
+          <label class="float-label" for="f-country">Country <span class="req">*</span></label>
+          <svg class="sel-arrow" width="14" height="14" fill="none" viewBox="0 0 24 24">
+            <path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="err-msg" id="e-country">Please fill the field</span>
+        </div>
+      </div>
+
+      <div class="form-section-title" style="margin-top:8px;">Order Information</div>
+      <div class="form-grid">
+        <div class="float-field full" style="position:relative;">
+          <select class="float-select" id="f-product" onchange="onProductChange()">
+            <option value=""></option>
+            <option data-price="100">Fiber Internet 300 Mbps</option>
+            <option data-price="120">5G Unlimited Mobile Plan</option>
+            <option data-price="200">Fiber Internet 1 Gbps</option>
+            <option data-price="180">Business Internet 500 Mbps</option>
+            <option data-price="150">VoIP Corporate Package</option>
+          </select>
+          <label class="float-label" for="f-product">Choose product <span class="req">*</span></label>
+          <svg class="sel-arrow" width="14" height="14" fill="none" viewBox="0 0 24 24">
+            <path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="err-msg" id="e-product">Please fill the field</span>
+        </div>
+        <div class="float-field qty-wrap">
+          <input class="float-input" id="f-qty" type="number" value="1" min="1" oninput="calcTotal();syncLabel(this)" />
+          <label class="float-label active" for="f-qty">Quantity <span class="req">*</span></label>
+          <div class="qty-arrows">
+            <button class="qty-arrow" onclick="changeQty(1)">▲</button>
+            <button class="qty-arrow" onclick="changeQty(-1)">▼</button>
+          </div>
+        </div>
+        <div class="float-field">
+          <input class="float-input" id="f-price" type="text" oninput="calcTotal();syncLabel(this)" />
+          <label class="float-label" for="f-price">Unit price <span class="req">*</span></label>
+          <span class="err-msg" id="e-price">Please fill the field</span>
+        </div>
+        <div class="float-field">
+          <input class="float-input" id="f-total" type="text" readonly />
+          <label class="float-label" for="f-total">Total amount <span class="req">*</span></label>
+        </div>
+        <div class="float-field" style="position:relative;">
+          <select class="float-select" id="f-status" onchange="syncLabel(this)">
+            <option value="Pending">Pending</option>
+            <option value="In progress">In progress</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <label class="float-label active" for="f-status">Status <span class="req">*</span></label>
+          <svg class="sel-arrow" width="14" height="14" fill="none" viewBox="0 0 24 24">
+            <path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round" />
+          </svg>
+        </div>
+        <div class="float-field" style="position:relative;">
+          <select class="float-select" id="f-createdby" onchange="syncLabel(this)">
+            <option value=""></option>
+            <option>Mr. Michael Harris</option>
+            <option>Mr. Ryan Cooper</option>
+            <option>Ms. Olivia Carter</option>
+            <option>Mr. Lucas Martin</option>
+          </select>
+          <label class="float-label" for="f-createdby">Created by <span class="req">*</span></label>
+          <svg class="sel-arrow" width="14" height="14" fill="none" viewBox="0 0 24 24">
+            <path d="M6 9l6 6 6-6" stroke="#aaa" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          <span class="err-msg" id="e-createdby">Please fill the field</span>
+        </div>
+      </div>
+
+      <div class="form-footer">
+        <button class="btn-cancel-form" onclick="closeOrderModal()">Cancel</button>
+        <button class="btn-submit-form" onclick="submitOrder()">Submit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════ PAGE ════════ -->
+  <div class="wrap">
+    <div class="page-title">Customer Orders</div>
+    <div class="page-sub">View and manage customer orders and details</div>
+
+    <div class="tabs">
+      <button class="tab active" id="tab-d" onclick="switchTab('d')">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+          <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+          <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+          <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+        </svg>
+        Dashboard
+      </button>
+      <button class="tab" id="tab-t" onclick="switchTab('t')">
+        <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" />
+          <path d="M3 9h18M3 15h18M9 3v18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        Table
+      </button>
+    </div>
+
+    <!-- Dashboard Pane -->
+    <div id="pane-d" class="empty-area">
+      <div class="empty-icon-box">
+        <svg width="36" height="36" fill="none" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="3" stroke="#aaa" stroke-width="1.8" />
+          <path d="M6 15l3.5-4 3 3.5 2.5-3 3 3.5" stroke="#aaa" stroke-width="1.8" stroke-linecap="round"
+            stroke-linejoin="round" />
+        </svg>
+      </div>
+      <div class="empty-title">Dashboard Not Configured</div>
+      <div class="empty-sub">Configure your dashboard to start viewing analytics</div>
+      <button class="config-btn" onclick="window.location.href='configure.html'">
+        <svg width="15" height="15" fill="none" viewBox="0 0 24 24">
+          <path
+            d="M12 4V2M12 22v-2M4 12H2M22 12h-2M6.34 6.34L4.93 4.93M19.07 19.07l-1.41-1.41M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"
+            stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          <circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2" />
+        </svg>
+        Configure dashboard
+      </button>
+    </div>
+
+    <!-- Table Pane -->
+    <div id="pane-t" style="display:none;" class="table-empty">
+      <div class="table-empty-icon">
+        <svg width="64" height="64" fill="none" viewBox="0 0 24 24">
+          <rect x="3" y="3" width="18" height="18" rx="2.5" stroke="#9CA3AF" stroke-width="1.5" />
+          <path d="M3 9h18M3 15h18M9 3v18M15 3v18" stroke="#9CA3AF" stroke-width="1.5" stroke-linecap="round" />
+        </svg>
+      </div>
+      <div class="table-empty-title">No Orders Yet</div>
+      <div class="table-empty-sub">Click Create Order and enter your order information</div>
+      <button class="create-order-btn" onclick="openOrderModal()">
+        <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="2" />
+          <path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        Create order
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* ── Tab switch ── */
+    function switchTab(t) {
+      document.getElementById('tab-d').classList.toggle('active', t === 'd');
+      document.getElementById('tab-t').classList.toggle('active', t === 't');
+      document.getElementById('pane-d').style.display = t === 'd' ? 'flex' : 'none';
+      document.getElementById('pane-t').style.display = t === 't' ? 'flex' : 'none';
+    }
+
+    /* ── Modal open/close ── */
+    function openOrderModal() {
+      clearForm();
+      document.getElementById('orderModal').classList.add('show');
+    }
+    function closeOrderModal() {
+      document.getElementById('orderModal').classList.remove('show');
+    }
+
+    /* ── Floating label sync ── */
+    function syncLabel(el) {
+      var label = el.parentElement.querySelector('.float-label');
+      if (!label) return;
+      label.classList.toggle('active', el.value !== '');
+    }
+
+    /* ── Product price auto-fill ── */
+    function onProductChange() {
+      var sel = document.getElementById('f-product');
+      var opt = sel.options[sel.selectedIndex];
+      var price = opt.dataset.price || '';
+      var priceEl = document.getElementById('f-price');
+      priceEl.value = price ? '$ ' + parseFloat(price).toFixed(2) : '';
+      syncLabel(sel); syncLabel(priceEl);
+      calcTotal();
+    }
+
+    /* ── Qty change ── */
+    function changeQty(delta) {
+      var el = document.getElementById('f-qty');
+      var val = Math.max(1, (parseInt(el.value) || 1) + delta);
+      el.value = val;
+      calcTotal();
+    }
+
+    /* ── Total calculation ── */
+    function calcTotal() {
+      var price = parseFloat((document.getElementById('f-price').value || '').replace('$', '').trim()) || 0;
+      var qty = parseInt(document.getElementById('f-qty').value) || 1;
+      if (qty < 1) { document.getElementById('f-qty').value = 1; qty = 1; }
+      var totalEl = document.getElementById('f-total');
+      totalEl.value = price && qty ? '$ ' + (price * qty).toFixed(2) : '';
+      syncLabel(totalEl);
+    }
+
+    /* ── Clear form ── */
+    var reqFields = ['fname', 'email', 'lname', 'phone', 'street', 'city', 'state', 'postal', 'country', 'product', 'createdby'];
+    function clearForm() {
+      reqFields.forEach(function (f) {
+        var el = document.getElementById('f-' + f);
+        if (el) { el.value = ''; el.classList.remove('err'); syncLabel(el); }
+        var em = document.getElementById('e-' + f);
+        if (em) em.classList.remove('show');
+      });
+      document.getElementById('f-qty').value = 1;
+      document.getElementById('f-price').value = '';
+      document.getElementById('f-total').value = '';
+      document.getElementById('f-status').value = 'Pending';
+    }
+
+    /* ── Submit → save to localStorage → go to table.html ── */
+    function submitOrder() {
+      var valid = true;
+      reqFields.forEach(function (f) {
+        var el = document.getElementById('f-' + f);
+        if (!el) return;
+        if (!el.value.trim()) {
+          el.classList.add('err');
+          var em = document.getElementById('e-' + f);
+          if (em) em.classList.add('show');
+          valid = false;
+        } else {
+          el.classList.remove('err');
+          var em = document.getElementById('e-' + f);
+          if (em) em.classList.remove('show');
+        }
+      });
+      if (!valid) return;
+
+      /* Read existing orders from localStorage */
+      var existing = [];
+      try { existing = JSON.parse(localStorage.getItem('orders') || '[]'); } catch (e) { }
+
+      var custCounter = existing.length + 1;
+      var ordCounter = existing.length + 1;
+      var price = parseFloat((document.getElementById('f-price').value || '').replace('$', '').trim()) || 0;
+      var qty = parseInt(document.getElementById('f-qty').value) || 1;
+      var now = new Date();
+      var dateStr = now.toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }) +
+        ' ' + now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      var newOrder = {
+        id: 'ORD - ' + String(ordCounter).padStart(4, '0'),
+        custId: 'CUST-' + String(custCounter).padStart(4, '0'),
+        fname: document.getElementById('f-fname').value,
+        lname: document.getElementById('f-lname').value,
+        email: document.getElementById('f-email').value,
+        phone: document.getElementById('f-phone').value,
+        street: document.getElementById('f-street').value,
+        city: document.getElementById('f-city').value,
+        state: document.getElementById('f-state').value,
+        postal: document.getElementById('f-postal').value,
+        country: document.getElementById('f-country').value,
+        product: document.getElementById('f-product').value,
+        qty: qty,
+        price: price,
+        total: price * qty,
+        status: document.getElementById('f-status').value,
+        createdby: document.getElementById('f-createdby').value,
+        date: dateStr
+      };
+
+      /* Add to front and save */
+      existing.unshift(newOrder);
+      localStorage.setItem('orders', JSON.stringify(existing));
+      localStorage.setItem('newOrderId', newOrder.id);
+
+      /* Navigate to table.html */
+      window.location.href = 'table.html';
+    }
+  </script>
+</body>
+
+</html>

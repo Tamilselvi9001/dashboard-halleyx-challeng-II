@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin - View All Orders</title>
+    <style>
+        :root {
+            --primary: #3dab7e;
+            --border: #e0e0e0;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            padding: 20px;
+            background: #f9f9f9;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .back-link {
+            text-decoration: none;
+            color: #666;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        .table-container {
+            background: #fff;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        th {
+            background: #f4f4f4;
+            padding: 12px 15px;
+            font-size: 13px;
+            color: #333;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--border);
+        }
+
+        td {
+            padding: 12px 15px;
+            font-size: 14px;
+            border-bottom: 1px solid var(--border);
+            color: #444;
+        }
+
+        tr:hover {
+            background: #fcfcfc;
+        }
+
+        .empty-msg {
+            padding: 40px;
+            text-align: center;
+            color: #999;
+        }
+
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="header">
+        <div style="display:flex; align-items:center; gap:15px">
+            <a href="configure.html" class="back-link">← Back to Config</a>
+            <h2>All Customer Orders</h2>
+        </div>
+        <div id="orderCount" style="font-weight:bold; color:var(--primary)">Total: 0</div>
+    </div>
+
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Customer Name</th>
+                    <th>Product</th>
+                    <th>Price</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="orderTableBody">
+            </tbody>
+        </table>
+        <div id="noData" class="empty-msg" style="display:none;">No orders found yet.</div>
+    </div>
+
+    <script>
+        function loadAdminOrders() {
+            const tbody = document.getElementById('orderTableBody');
+            const noData = document.getElementById('noData');
+            const countLabel = document.getElementById('orderCount');
+
+            // table.html-la 'orders' nu save panna data-ah inga edukkuron
+            let orders = JSON.parse(localStorage.getItem('orders')) || [];
+
+            if (orders.length === 0) {
+                noData.style.display = 'block';
+                countLabel.innerText = `Total: 0`;
+                tbody.innerHTML = '';
+                return;
+            }
+
+            noData.style.display = 'none';
+            countLabel.innerText = `Total: ${orders.length}`;
+            tbody.innerHTML = '';
+
+            orders.forEach((order, index) => {
+                // Table-la irunthu vara variable names: fname, lname, product, total, status
+                const customerFullName = (order.fname || "") + " " + (order.lname || "");
+                const statusColor = order.status === 'Completed' ? '#3dab7e' : 'orange';
+
+                const row = `
+                    <tr>
+                        <td>${index + 1}</td>
+                        <td>${customerFullName.trim() || 'Unknown'}</td>
+                        <td>${order.product || 'N/A'}</td>
+                        <td>$ ${parseFloat(order.total || 0).toFixed(2)}</td>
+                        <td>
+                            <span class="status-badge" style="background: ${statusColor}22; color: ${statusColor}">
+                                ${order.status || 'Pending'}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+                tbody.innerHTML += row;
+            });
+        }
+
+        // Page open aagum pothu data load panna
+        window.onload = loadAdminOrders;
+
+        // Optional: Listen for changes in other tabs
+        window.addEventListener('storage', () => {
+            loadAdminOrders();
+        });
+    </script>
+</body>
+
+</html>

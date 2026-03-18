@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>View Orders - Table</title>
+  <style>
+    :root {
+      --primary-green: #3dab7e;
+      --border: #e0e0e0;
+      --bg-light: #f4faf8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+
+    body {
+      background: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 36px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .back-btn {
+      font-size: 24px;
+      cursor: pointer;
+      color: #444;
+      text-decoration: none;
+      padding: 5px;
+      display: flex;
+      align-items: center;
+    }
+
+    .page-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #000;
+    }
+
+    .create-order-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 22px;
+      background: var(--primary-green);
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #fff;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .create-order-btn:hover {
+      background: #2e8f67;
+    }
+
+    /* Main Area */
+    .main-wrap {
+      flex: 1;
+      padding: 36px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .wrap {
+      border: 1.5px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .tabs {
+      display: flex;
+      border-bottom: 1.5px solid var(--border);
+      background: #fcfcfc;
+    }
+
+    .tab {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      color: #888;
+      cursor: pointer;
+      border: none;
+      border-bottom: 2.5px solid transparent;
+      background: none;
+    }
+
+    .tab.active {
+      color: var(--primary-green);
+      border-bottom-color: var(--primary-green);
+    }
+
+    .table-container {
+      flex: 1;
+      overflow: auto;
+      background: #fff;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 1200px;
+    }
+
+    thead {
+      position: sticky;
+      top: 0;
+      background: #fff;
+      z-index: 10;
+      border-bottom: 1.5px solid var(--border);
+    }
+
+    th {
+      text-align: left;
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #333;
+      text-transform: uppercase;
+    }
+
+    td {
+      padding: 14px 18px;
+      font-size: 13.5px;
+      color: #000;
+      border-bottom: 1px solid #eee;
+    }
+
+    .status {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 11.5px;
+      font-weight: 600;
+      text-transform: capitalize;
+    }
+
+    .status.completed {
+      background: #ecfdf5;
+      color: #10b981;
+    }
+
+    .status.pending {
+      background: #fffbeb;
+      color: #f59e0b;
+    }
+
+    .status.inprogress {
+      background: #eff6ff;
+      color: #3b82f6;
+    }
+
+    .action-cell {
+      position: relative;
+      text-align: center;
+    }
+
+    .action-dots {
+      border: none;
+      background: none;
+      font-size: 20px;
+      color: #bbb;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 5px;
+    }
+
+    .dropdown {
+      display: none;
+      position: absolute;
+      top: 35px;
+      right: 10px;
+      background: #fff;
+      border: 1.5px solid var(--border);
+      border-radius: 7px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      width: 120px;
+      z-index: 100;
+      padding: 6px 0;
+    }
+
+    .dropdown.show {
+      display: block;
+    }
+
+    .dropdown button {
+      width: 100%;
+      text-align: left;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: #333;
+      cursor: pointer;
+      border: none;
+      background: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .load-mask {
+      position: fixed;
+      inset: 0;
+      background: rgba(255, 255, 255, 0.8);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-size: 15px;
+      font-weight: 500;
+      color: #555;
+      gap: 10px;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 3px solid #ccc;
+      border-top-color: var(--primary-green);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="load-mask" id="loadMask">
+    <div class="spinner"></div>
+    <span id="loadText">Processing...</span>
+  </div>
+
+  <div class="header">
+    <div class="header-left">
+      <a href="customer-orders.html" class="back-btn">←</a>
+      <div class="page-title">Admin Order View</div>
+    </div>
+    <button class="create-order-btn" onclick="openCreateModal()">
+      <svg width="16" height="16" fill="none" viewBox="0 0 24 24">
+        <circle cx="12" cy="12" r="9" stroke="#fff" stroke-width="2" />
+        <path d="M12 8v8M8 12h8" stroke="#fff" stroke-width="2" stroke-linecap="round" />
+      </svg>
+      Create order
+    </button>
+  </div>
+
+  <div class="main-wrap">
+    <div class="wrap">
+      <div class="tabs">
+        <button class="tab" onclick="window.location.href='configure-dashboard.html'">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+            <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+            <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+            <rect x="14" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2" />
+          </svg>
+          Dashboard
+        </button>
+        <button class="tab active">
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24">
+            <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="2" />
+            <path d="M3 9h18M3 15h18M9 3v18" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+          </svg>
+          Table
+        </button>
+      </div>
+
+      <div class="table-container">
+        <table id="ordersTable">
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Customer name</th>
+              <th>Email id</th>
+              <th>Phone number</th>
+              <th>Product</th>
+              <th>Total amount</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = "https://your-backend-api.com/orders";
+
+    const getStatusClass = (s) => (s || '').toLowerCase().replace(' ', '');
+
+    function openCreateModal() {
+      window.location.href = "customer-orders.html?action=create";
+    }
+
+    async function loadOrders() {
+      const mask = document.getElementById('loadMask');
+      const body = document.getElementById('tableBody');
+      const loadText = document.getElementById('loadText');
+
+      body.innerHTML = '';
+      loadText.innerText = "Fetching your orders...";
+      mask.style.display = 'flex';
+
+      try {
+        const response = await fetch(API_URL);
+        const orders = await response.json();
+        orders.forEach(ord => renderRow(ord, body));
+      } catch (error) {
+        console.error("Error:", error);
+        let localData = JSON.parse(localStorage.getItem('orders') || '[]');
+        localData.forEach(ord => renderRow(ord, body));
+      } finally {
+        mask.style.display = 'none';
+      }
+    }
+
+    function renderRow(ord, container) {
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td style="font-weight:600;">${ord.id}</td>
+        <td>${ord.fname} ${ord.lname}</td>
+        <td style="color:#007bff;">${ord.email}</td>
+        <td>${ord.phone}</td>
+        <td>${ord.product}</td>
+        <td style="font-weight:700;">$ ${(ord.total || 0).toFixed(2)}</td>
+        <td><span class="status ${getStatusClass(ord.status)}">${ord.status}</span></td>
+        <td class="action-cell">
+          <button class="action-dots" onclick="toggleDropdown('${ord.id}')">⋮</button>
+          <div class="dropdown" id="dd-${ord.id}">
+            <button onclick="editOrder('${ord.id}')">✏️ Edit</button>
+            <button style="color:#e53e3e;" onclick="deleteOrder('${ord.id}')">🗑️ Delete</button>
+          </div>
+        </td>
+      `;
+      container.appendChild(tr);
+    }
+
+    // UPDATED DELETE LOGIC - Row-by-row deletion fixed
+    async function deleteOrder(id) {
+      if (!confirm('Are you sure you want to delete order ID: ' + id + '?')) return;
+
+      const mask = document.getElementById('loadMask');
+      document.getElementById('loadText').innerText = "Deleting order...";
+      mask.style.display = 'flex';
+
+      try {
+        // Step 1: Try deleting from API
+        await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+
+        // Step 2: Update LocalStorage (with safe string comparison)
+        let existing = JSON.parse(localStorage.getItem('orders') || '[]');
+        // String conversion ensures correct filtering
+        let updated = existing.filter(ord => String(ord.id) !== String(id));
+        localStorage.setItem('orders', JSON.stringify(updated));
+
+        loadOrders();
+      } catch (error) {
+        console.warn("API Error, deleting locally:", error);
+        let existing = JSON.parse(localStorage.getItem('orders') || '[]');
+        let updated = existing.filter(ord => String(ord.id) !== String(id));
+        localStorage.setItem('orders', JSON.stringify(updated));
+        loadOrders();
+      } finally {
+        mask.style.display = 'none';
+      }
+    }
+
+    let currentDropdownId = null;
+    function toggleDropdown(id) {
+      if (currentDropdownId) {
+        const prev = document.getElementById('dd-' + currentDropdownId);
+        if (prev) prev.classList.remove('show');
+      }
+      if (currentDropdownId === id) { currentDropdownId = null; return; }
+      currentDropdownId = id;
+      document.getElementById('dd-' + id).classList.add('show');
+    }
+
+    window.onclick = function (event) {
+      if (!event.target.classList.contains('action-dots')) {
+        if (currentDropdownId) {
+          const dd = document.getElementById('dd-' + currentDropdownId);
+          if (dd) dd.classList.remove('show');
+          currentDropdownId = null;
+        }
+      }
+    }
+
+    function editOrder(id) { alert('Edit: ' + id); }
+
+    window.onload = loadOrders;
+  </script>
+</body>
+
+</html>
